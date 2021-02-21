@@ -5,4 +5,4 @@ if [ "$PRE_SCRIPT" ]; then
   chmod ugo+x $script
   $script
 fi
-/bin/authServer $@
+/bin/configServer $@
