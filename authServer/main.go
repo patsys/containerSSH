@@ -51,7 +51,7 @@ type CaFilters struct {
 	OrganizationUnit []string `yaml:"organizationUnit,omitempty"`
 }
 
-type Mtls struct { 
+type Mtls struct {
 	Ca string `yaml:"ca,omitempty`
 }
 
@@ -117,7 +117,7 @@ func passwordHandler(w http.ResponseWriter, r *http.Request) {
 	if (len(r.TLS.VerifiedChains) > 0 ||  basicAuth(w, r)) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
 		var req PasswordRequest
-    	json.Unmarshal(reqBody, &req)
+	json.Unmarshal(reqBody, &req)
 		user, ok := cfg.Users[req.Username]
 		if !ok {
 			io.WriteString(w, "{\"success\": false }\n")
@@ -141,7 +141,7 @@ func passwordHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	
+
 	io.WriteString(w, "{\"success\": false }\n")
 	return
 }
@@ -151,7 +151,7 @@ func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
 	if (len(r.TLS.VerifiedChains) > 0 || basicAuth(w, r)) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
 		var req PubkeyRequest
-    	json.Unmarshal(reqBody, &req)
+	json.Unmarshal(reqBody, &req)
 		user, ok := cfg.Users[req.Username]
 		if !ok {
 			io.WriteString(w, "{\"success\": false }\n")
@@ -160,13 +160,13 @@ func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
 		for _, pubKey := range user.PublicKeys {
 			if (req.PublicKey == pubKey) {
 				io.WriteString(w, "{\"success\": true }\n")
-				return		
+				return
 			}
 		}
 	}
-	
+
 	io.WriteString(w, "{\"success\": false }\n")
-	return		
+	return
 }
 
 func main() {
@@ -200,7 +200,7 @@ func main() {
 				// VerifyPeerCertificate: mtlsAuth,
 			}
 			tlsConfig.BuildNameToCertificate()
-		
+
 			// Create a Server instance to listen on port 8443 with the TLS config
 			server := &http.Server{
 				Addr:      cfg.Server.Listen,
@@ -237,7 +237,7 @@ func init() {
 
 	if cfg == nil {
 		glog.Fatalf("Config file can not be empty")
-		os.Exit(-1) 
+		os.Exit(-1)
 	}
 
 	if cfg.UserFolders == nil { cfg.UserFolders = []string{} }
