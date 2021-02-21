@@ -87,7 +87,6 @@ services:
         done
         set -ex
         set -o pipefail
-        sleep 10
         curl -f --cacert /example/server/ca.crt https://authserver:8080 && exit 1 || echo failed correct
         curl -f --cacert /example/server/ca.crt https://authserver:8080/password && exit 1 || echo failed correct
         curl -f --cacert /example/server/ca.crt https://authserver:8080/pubkey && exit 1 || echo failed correct

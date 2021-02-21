@@ -1,0 +1,41 @@
+properties:
+  docker:
+    config:
+      backend: docker
+      docker:
+        host: dockerhost:2375
+        config:
+          image: ubuntu
+  kubernetes:
+    config:
+      backend: kubernetes
+      kuberun: # https://containerssh.io/reference/kuberun/
+        connection:
+          host: kubernetes.default.svc
+        pod:
+          namespace: default
+          image: containerssh/containerssh
+  admin:
+    config:
+      docker:
+        config:
+          image: containerssh/containerssh
+users: # map with users
+  user1: # username
+    groups:
+    - kubernetes
+  user2: # username
+    groups:
+    - docker
+    - admin
+server: # server config
+  listen: ":8080"  # default :8080 at http or 8443 on https 
+  tls: # enable tls
+    cert: example/server/server_cert.pem # cert
+    key: example/server/server_key.pem # key
+  auth: # aatuh for server
+    credentials: # basic auth
+      test: ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff # username: password sha512
+    mtls: # enable clienttls (mtls)
+    - ca: example/clientCert1/ca.crt # trusted ca 1
+    - ca: example/clientCert2/ca.crt # trusted ca 2

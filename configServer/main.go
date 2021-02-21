@@ -6,7 +6,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"path/filepath"
-	"gopkg.in/yaml.v2"
+    "sigs.k8s.io/yaml"
 	"os"
 	"github.com/golang/glog"
 	"net/http"
@@ -14,64 +14,55 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
-	"io"
-	"encoding/base64"
+	"github.com/imdario/mergo"
+//	"io"
+//	"encoding/base64"
 	"net"
 )
 
 
 type Config struct {
-	UserFolders []string `yaml:"userFolders,omitempty"`
-	Users map[string]User `yaml:"users"`
-	Server Server `yaml:"server"`
+	UserFolders []string `json:"userFolders,omitempty"`
+	Users map[string]User `json:"users"`
+	PropertiesFolders []string `json:"propertiesFolders,omitempty"`
+	Properties map[string]map[string]interface{} `json:"properties"`
+	Server Server `json:"server"`
 }
 
 type User struct {
-	Password	string `yaml:"password,omitempty"`
-	PublicKeys	[]string `yaml:"publicKeys,omitempty"`
-	Ips			[]string `yaml:ips,omitempty`
-	Groups		[]string `yaml:groups,omitempty`
+	Groups		[]string `json:groups,omitempty`
 }
 
 
 type Server struct {
-	Auth Auth `yaml:"auth,omitempty"`
-	Tls Tls `yaml:"tls,omitempty"`
-	Listen string `yaml:"listen,omitempty`
+	Auth Auth `json:"auth,omitempty"`
+	Tls Tls `json:"tls,omitempty"`
+	Listen string `json:"listen,omitempty`
 }
 
 type Auth struct {
-	Credentials map[string]string `yaml:"credentials,omitempty"`
-	Mtls []Mtls `yaml:"mtls,omitempty"`
+	Credentials map[string]string `json:"credentials,omitempty"`
+	Mtls []Mtls `json:"mtls,omitempty"`
 }
 
 type CaFilters struct {
-	CommonName string `yaml:"commonName,omitempty"`
-	Organisation []string `yaml:"organization,omitempty"`
-	OrganizationUnit []string `yaml:"organizationUnit,omitempty"`
+	CommonName string `json:"commonName,omitempty"`
+	Organisation []string `json:"organization,omitempty"`
+	OrganizationUnit []string `json:"organizationUnit,omitempty"`
 }
 
 type Mtls struct {
-	Ca string `yaml:"ca,omitempty`
+	Ca string `json:"ca,omitempty`
 }
 
 type Tls struct {
-	CertFile string `yaml:"cert,omitempty"`
-	KeyFile string `yaml:"key,omitempty"`
+	CertFile string `json:"cert,omitempty"`
+	KeyFile string `json:"key,omitempty"`
 }
 
-type PasswordRequest struct {
+type ConfigRequest struct {
     Username string `json:"username"`
-    PasswordBase64 string `json:"passwordBase64"`
-    ConnectionId string `json:"connectionId"`
-    RemoteAddress string `json:"remoteAddress"`
-}
-
-type PubkeyRequest struct {
-    Username string `json:"username"`
-    PublicKey string `json:"publicKey"`
-    ConnectionId string `json:"connectionId"`
-    RemoteAddress string `json:"remoteAddress"`
+    SessionID string `json:"sessionId"`
 }
 
 var (
@@ -112,68 +103,36 @@ func checkIp(remoteIp string, ips []string) bool {
 	return false
 }
 
-func passwordHandler(w http.ResponseWriter, r *http.Request) {
+func configHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if (len(r.TLS.VerifiedChains) > 0 ||  basicAuth(w, r)) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
-		var req PasswordRequest
-	json.Unmarshal(reqBody, &req)
+		var req ConfigRequest
+	    json.Unmarshal(reqBody, &req)
 		user, ok := cfg.Users[req.Username]
 		if !ok {
-			io.WriteString(w, "{\"success\": false }\n")
+			w.WriteHeader(500)
 			return
 		}
-
-		password, error :=  base64.URLEncoding.DecodeString(req.PasswordBase64)
-	    if error != nil {
-			io.WriteString(w, "{\"success\": false }\n")
-			return
-		}
-
-		hashSum := sha512.Sum512(password)
-		if hex.EncodeToString(hashSum[:]) !=  user.Password {
-			io.WriteString(w, "{\"success\": false }\n")
-			return
-		} else {
-			if checkIp(req.RemoteAddress, user.Ips){
-				io.WriteString(w, "{\"success\": true }\n")
+		var merged map[string]interface{}
+		for _, group := range user.Groups {
+			conf, ok := cfg.Properties[group]
+			if !ok {
+				w.WriteHeader(500)
 				return
 			}
+			if err := mergo.Merge(&merged, conf, mergo.WithOverride); err != nil {
+				w.WriteHeader(500)
+				return
+ 	       }
 		}
+		json.NewEncoder(w).Encode(merged)
 	}
-
-	io.WriteString(w, "{\"success\": false }\n")
-	return
-}
-
-func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if (len(r.TLS.VerifiedChains) > 0 || basicAuth(w, r)) {
-		reqBody, _ := ioutil.ReadAll(r.Body)
-		var req PubkeyRequest
-	json.Unmarshal(reqBody, &req)
-		user, ok := cfg.Users[req.Username]
-		if !ok {
-			io.WriteString(w, "{\"success\": false }\n")
-			return
-		}
-		for _, pubKey := range user.PublicKeys {
-			if (req.PublicKey == pubKey) {
-				if checkIp(req.RemoteAddress, user.Ips){
-					io.WriteString(w, "{\"success\": true }\n")
-					return
-				}
-			}
-		}
-	}
-
-	io.WriteString(w, "{\"success\": false }\n")
 	return
 }
 
 func main() {
-	http.HandleFunc("/password", passwordHandler)
-	http.HandleFunc("/pubkey", pubkeyHandler)
+	http.HandleFunc("/config", configHandler)
 	if cfg.Server.Listen == "" {
 		if (cfg.Server.Tls == Tls{}) {
 		  cfg.Server.Listen = ":8080"
@@ -195,7 +154,7 @@ func main() {
 				}
 				caCertPool.AppendCertsFromPEM(caCert)
 			}
-			// Create the TLS Config with the CA pool and enable Client certificate validation
+			
 			tlsConfig := &tls.Config{
 				ClientCAs: caCertPool,
 				ClientAuth: tls.VerifyClientCertIfGiven,
@@ -203,7 +162,6 @@ func main() {
 			}
 			tlsConfig.BuildNameToCertificate()
 
-			// Create a Server instance to listen on port 8443 with the TLS config
 			server := &http.Server{
 				Addr:      cfg.Server.Listen,
 				TLSConfig: tlsConfig,
@@ -227,7 +185,11 @@ func init() {
 			glog.Fatalf("Cannot get config file %s Get err   #%v ", configFlag, err)
 			os.Exit(-1)
 		}
-		err = yaml.Unmarshal(yamlFile, &cfg)
+		if err != nil {
+			glog.Fatalf("Config parse error: %v", err)
+			os.Exit(-1)
+		}
+		err = yaml.Unmarshal(yamlFile,&cfg)
 		if err != nil {
 			glog.Fatalf("Config parse error: %v", err)
 			os.Exit(-1)
@@ -268,3 +230,4 @@ func init() {
 		}
 	}
 }
+
