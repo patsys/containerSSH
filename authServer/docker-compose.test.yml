@@ -96,7 +96,10 @@ services:
         curl -f --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.4.12"}' https://authserver:8080/password | grep -q "true"
         curl -f --key /example/clientCert2/client.key --cert /example/clientCert2/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.5.230"}' https://authserver:8080/password | grep -q "true"
         curl -f --key /example/clientCert3/client.key --cert /example/clientCert3/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.5.230"}' https://authserver:8080/password && exit 1 || echo failed correct
+        [ `curl --cacert /example/server/ca.crt -LI https://authserver:8080/password -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.4.12"}' -o /dev/null -w '%{http_code}\n' -s` -eq 401 ]
+        [ `curl --cacert /example/server/ca.crt -LI https://authserver:8080/pubkey -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.4.12"}' -o /dev/null -w '%{http_code}\n' -s` -eq 401 ]
         curl -f --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.6.4.12"}' https://authserver:8080/password | grep -q "false"
+        curl -f --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdDE=", "remoteAddress": "10.5.4.12"}' https://authserver:8080/password | grep -q "false"
     volumes:
     - Cert1:/example/clientCert1
     - Cert2:/example/clientCert2
