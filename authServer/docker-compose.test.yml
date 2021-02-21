@@ -63,6 +63,8 @@ services:
         done
         sed 's|example/|/example/|g' /example/config.yml >/tmp/config.yml
     command: ["-config","/tmp/config.yml"]
+    depends_on:
+    - openssl
     volumes:
     - ./example:/example
     - Cert1:/example/clientCert1
@@ -101,6 +103,9 @@ services:
     - Cert3:/example/clientCert3
     - Servercert:/example/server
     links:
+    - authserver
+    depends_on:
+    - openssl
     - authserver
 volumes:
   Cert1: {}
