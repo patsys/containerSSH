@@ -159,8 +159,10 @@ func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, pubKey := range user.PublicKeys {
 			if (req.PublicKey == pubKey) {
-				io.WriteString(w, "{\"success\": true }\n")
-				return
+				if checkIp(req.RemoteAddress, user.Ips){
+					io.WriteString(w, "{\"success\": true }\n")
+					return
+				}
 			}
 		}
 	}
