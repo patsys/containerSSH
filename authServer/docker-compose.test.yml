@@ -37,7 +37,7 @@ services:
     - Cert3:/Cert3
     - Servercert:/Server
   authserver:
-    image: patsys/containerssh-authserver
+    image: patsys/containerssh-authserver:develop
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
