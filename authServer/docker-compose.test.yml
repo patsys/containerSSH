@@ -100,6 +100,8 @@ services:
     - Cert2:/example/clientCert2
     - Cert3:/example/clientCert3
     - Servercert:/example/server
+    links:
+    - authserver
 volumes:
   Cert1: {}
   Cert2: {}
