@@ -1,0 +1,169 @@
+version: '3'
+services:
+  dockerhost: 
+    privileged: true
+    image: docker:dind
+    environment: 
+      DOCKER_TLS_CERTDIR: /certs
+    volumes:
+    - DockerCerts:/certs
+  openssl:
+    image: patsys/openssl
+    environment:
+      SCRIPT: |
+        #!/bin/sh
+        set -o pipefail
+        set -ex
+        # Servercert
+        cd /Auth
+        if [ ! -f ca.crt ]; then
+          openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CAServer"
+          openssl genrsa -out server_key.pem 4096
+          openssl req  -new -key server_key.pem -out server.req -subj  "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=authserver"
+          openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -days 1460 -outform PEM -out server_cert.pem
+        fi
+        cd /Config
+        if [ ! -f ca.crt ]; then
+          openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CAServer"
+          openssl genrsa -out server_key.pem 4096
+          openssl req  -new -key server_key.pem -out server.req -subj  "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=authserver"
+          openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -days 1460 -outform PEM -out server_cert.pem
+        fi
+        # Clientcert 1
+        cd /Cert1
+        if [ ! -f ca.crt ]; then
+          openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt  -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CACart1"
+          openssl genrsa -out client.key 4096
+          openssl req -new -key client.key -out client.req -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=ClientCart1"
+          openssl x509 -req -in client.req -CA ca.crt -CAkey ca.key -set_serial 101 -extensions client -days 365 -outform PEM -out client.crt
+        fi
+        # Clientcert 2
+        cd /Cert2
+        if [ ! -f ca.crt ]; then
+          openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt  -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CACart2"
+          openssl genrsa -out client.key 4096
+          openssl req -new -key client.key -out client.req -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=ClientCart2"
+          openssl x509 -req -in client.req -CA ca.crt -CAkey ca.key -set_serial 101 -extensions client -days 365 -outform PEM -out client.crt
+        fi
+        # Clientcert 3
+        cd /Cert3
+        if [ ! -f ca.crt ]; then
+          openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt  -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CACart2"
+          openssl genrsa -out client.key 4096
+          openssl req -new -key client.key -out client.req -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=ClientCart2"
+          openssl x509 -req -in client.req -CA ca.crt -CAkey ca.key -set_serial 101 -extensions client -days 365 -outform PEM -out client.crt
+        fi
+    volumes:
+    - Cert1:/Cert1
+    - Cert2:/Cert2
+    - Cert3:/Cert3
+    - AuthCert:/Auth
+    - ConfigCert:/Config
+  authserver:
+    build:
+      context: authServer
+    image: patsys/containerssh-authserver
+    environment:
+      PRE_SCRIPT: |
+        #!/bin/sh
+        for i in `seq 10` ; do
+          if [ `find /example -name "*.crt" -type f | wc -w` -ge 3 ]; then
+            break
+          fi
+          sleep 1
+        done
+        sed 's|example/|/example/|g' /example/config.yml >/tmp/config.yml
+    command: ["-config","/tmp/config.yml"]
+    depends_on:
+    - openssl
+    volumes:
+    - ./authServer/example:/example
+    - Cert1:/example/clientCert1
+    - Cert2:/example/clientCert2
+    - AuthCert:/example/server
+  addcert:
+    image: evoila/concourse-alg
+    command: 
+    - /bin/bash
+    - -c
+    - |
+        for i in `seq 10` ; do
+          if [ `find /cert -name "*.pem" -type f | wc -w` -ge 9 ]; then
+            break
+          fi
+          sleep 1
+        done
+        cp /example/config.yml /conf
+        yq --rawfile cacert /cert/server/ca.pem --rawfile key /cert/client/key.pem --rawfile cert /cert/client/cert.pem  -Yi '.properties.docker.config.docker.connection.cert=$$cert,.properties.docker.config.docker.connect.cert=$$key,.properties.docker.config.docker.connection.cacert=$$cacert' /conf/config.yml
+    depends_on:
+    - dockerhost
+    volumes:
+    - DockerCerts:/cert
+    - ConfigConfig:/conf
+    - ./configServer/example:/example
+  configserver:
+    build:
+      context: configServer
+    image: patsys/containerssh-configserver
+    environment:
+      PRE_SCRIPT: |
+        #!/bin/sh
+        for i in `seq 10` ; do
+          if [ -f /conf/config.yml ]; then
+            break
+          fi
+          sleep 1
+        done
+        for i in `seq 10` ; do
+          if [ `find /example -name "*.crt" -type f | wc -w` -ge 3 ]; then
+            break
+          fi
+          sleep 1
+        done
+        sed 's|example/|/example/|g' /conf/config.yml >/tmp/config.yml
+    command: ["-config","/tmp/config.yml"]
+    depends_on:
+    - openssl
+    - dockerhost
+    - addcert
+    volumes:
+    - ConfigConfig:/conf
+    - ./configServer/example:/example
+    - Cert1:/example/clientCert1
+    - Cert2:/example/clientCert2
+    - ConfigCert:/example/server
+    - DockerCerts:/example/docker
+  containerssh:
+    build: .
+    image: patsys/containerssh
+    environment:
+      PRE_SCRIPT: |
+        #!/bin/sh
+        sleep 30
+        sed 's|example/ssh_host_rsa_key|/example/example/ssh_host_rsa_key|g' /example/example/config.yml >/tmp/config.yml
+        sed -i 's|authServer/|/example/authServer/|g' /tmp/config.yml
+        sed -i 's|configServer/|/example/configServer/|g' /tmp/config.yml
+    command: ["-config","/tmp/config.yml"]
+    links:
+    - configserver
+    - authserver
+    - dockerhost
+    depends_on:
+    - openssl
+    - configserver
+    - authserver
+    - dockerhost
+    volumes:
+    - .:/example
+    - Cert1:/example/configServer/example/clientCert1
+    - Cert1:/example/authServer/example/clientCert1
+    - AuthCert:/example/authServer/example/server
+    - ConfigCert:/example/configServer/example/server/
+volumes:
+  Cert1: {}
+  Cert2: {}
+  Cert3: {}
+  AuthCert: {}
+  ConfigCert: {}
+  DockerCerts: {}
+  ConfigConfig: {}

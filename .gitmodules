@@ -1,0 +1,3 @@
+[submodule "configServer/ContainerSSH"]
+	path = ContainerSSH
+	url = https://github.com/ContainerSSH/ContainerSSH.git

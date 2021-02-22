@@ -1,0 +1,13 @@
+ssh:
+  hostkeys:
+    - example/ssh_host_rsa_key
+auth:
+  url: https://authserver:8080
+  cacert: authServer/example/server/ca.crt
+  cert: authServer/example/clientCert1/client.crt
+  key: authServer/example/clientCert1/client.key
+configserver:
+  url: https://configserver:8080/config
+  cacert: configServer/example/server/ca.crt
+  cert: configServer/example/clientCert1/client.crt
+  key: configServer/example/clientCert1/client.key

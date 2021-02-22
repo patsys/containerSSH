@@ -3,7 +3,8 @@ properties:
     config:
       backend: docker
       docker:
-        host: dockerhost:2375
+        connection:
+          host: dockerhost:2375
         config:
           image: ubuntu
   kubernetes:
@@ -13,12 +14,16 @@ properties:
         connection:
           host: kubernetes.default.svc
         pod:
-          namespace: default
-          image: containerssh/containerssh
+          metadata:
+            namespace: default
+          spec:
+            containers:
+            - name: containerssh
+              image: containerssh/containerssh
   admin:
     config:
       docker:
-        config:
+        execution:
           image: containerssh/containerssh
 users: # map with users
   user1: # username

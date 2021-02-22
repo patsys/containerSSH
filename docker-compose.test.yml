@@ -1,5 +1,12 @@
 version: '3'
 services:
+  dockerhost: 
+    privileged: true
+    image: docker:dind
+    environment: 
+      DOCKER_TLS_CERTDIR:/certs
+    volumes:
+    - DockerCerts:/certs
   openssl:
     image: patsys/openssl
     environment:
@@ -35,9 +42,10 @@ services:
     - Cert1:/Cert1
     - Cert2:/Cert2
     - Cert3:/Cert3
-    - Servercert:/Server
-  configserver:
-    image: $IMAGE_NAME
+  authserver:
+    build:
+      context: authServer
+    image: patsys/containerssh-authserver
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
@@ -66,17 +74,61 @@ services:
     depends_on:
     - openssl
     volumes:
-    - ./example:/example
+    - ./authServer/example:/example
     - Cert1:/example/clientCert1
     - Cert2:/example/clientCert2
     - Servercert:/example/server
-  sut:
-    image: patsys/curl
-    command:
-    - /bin/sh
-    - -c
-    - |
+  configserver:
+    build:
+      context: configServer
+    image: patsys/containerssh-configserver
+    environment:
+      PRE_SCRIPT: |
+        #!/bin/sh
+        for i in `seq 10` ; do
+          if [ `ls /example/server | wc -w` -ge 2 ]; then
+            break
+          fi
+          sleep 1
+        done
         i=1
+        for i in `seq 10` ; do
+          if [ `ls /example/clientCert1 | wc -w` -ge 4 ]; then
+            break
+          fi
+          sleep 1
+        done
+        i=1
+        for i in `seq 10` ; do
+          if [ `ls /example/clientCert2 | wc -w` -ge 4 ]; then
+            break
+          fi
+          sleep 1
+        done
+        sed 's|example/|/example/|g' /example/config.yml >/tmp/config.yml
+        sed "s|         host: dockerhost:2375|         host: dockerhost:2375
+                 cert: |
+        `sed 's/^/           /' /example/docker/client/cert.pem`
+                 key: |
+        `sed 's/^/           /' /example/docker/client/key.pem`
+                 cacert: |
+        `sed 's/^/           /' /example/docker/server/ca.pem`|g"
+    command: ["-config","/tmp/config.yml"]
+    depends_on:
+    - openssl
+    - dockerhost
+    volumes:
+    - ./configServer/example:/example
+    - Cert1:/example/clientCert1
+    - Cert2:/example/clientCert2
+    - Servercert:/example/server
+    - DockerCerts:/example/docker
+  containerssh:
+    build: .
+    image: patsys/containerssh
+    environment:
+      PRE_SCRIPT: |
+        #!/bin/sh
         for i in `seq 30` ; do
           curl --cacert /example/server/ca.crt -LI https://configserver:8080/noexist
           ret=`curl --cacert /example/server/ca.crt -LI https://configserver:8080/noexist -o /dev/null -w '%{http_code}\n' -s`
@@ -85,24 +137,32 @@ services:
           fi
           sleep 1
         done
-        set -ex
-        set -o pipefail
-        curl -f --cacert /example/server/ca.crt https://configserver:8080 && exit 1 || echo failed correct
-        curl -f --cacert /example/server/ca.crt https://configserver:8080/config && exit 1 || echo failed correct
-        curl --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1"}' https://configserver:8080/config | grep -q '{"config":{"backend":"kubernetes","kuberun":{"connection":{"host":"kubernetes.default.svc"},"pod":{"metadata":{"namespace":"default"},"spec":{"containers":[{"image":"containerssh/containerssh","name":"containerssh"}]}}}}}'
-        curl --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user2"}' https://configserver:8080/config | grep -q '{"config":{"backend":"docker","docker":"execution":{"image":"containerssh/containerssh"},"host":"dockerhost:2375"}}}'
-    volumes:
-    - Cert1:/example/clientCert1
-    - Cert2:/example/clientCert2
-    - Cert3:/example/clientCert3
-    - Servercert:/example/server
+        for i in `seq 30` ; do
+          curl --cacert /example/server/ca.crt -LI https://auth:8080/noexist
+          ret=`curl --cacert /example/server/ca.crt -LI https://configserver:8080/noexist -o /dev/null -w '%{http_code}\n' -s`
+          if [ "$ret" -eq 404 ] || [ "$ret" -eq 401 ]; then 
+            break
+          fi
+          sleep 1
+        done
+        sed 's|example/|/example/|g' /example/config.yml >/tmp/config.yml
+    command: ["-config","/tmp/config.yml"]
     links:
     - configserver
+    - authserver
+    - dockerhost
     depends_on:
     - openssl
     - configserver
+    - authserver
+    - dockerhost
+    volumes:
+    - Cert1:/example/clientCert1
+    - Cert2:/example/clientCert2
+    - Servercert:/example/server
 volumes:
   Cert1: {}
   Cert2: {}
   Cert3: {}
   Servercert: {}
+  DockerCerts: {}
