@@ -150,7 +150,6 @@ func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if (len(r.TLS.VerifiedChains) > 0 || basicAuth(w, r)) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
-		glog.Fatalf(string(reqBody))
 		var req PubkeyRequest
 	json.Unmarshal(reqBody, &req)
 		user, ok := cfg.Users[req.Username]
