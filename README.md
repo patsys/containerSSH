@@ -1,7 +1,12 @@
-# containerSSH
-This Repository is used for ContainerSSH(https://github.com/ContainerSSH/ContainerSSH)
+# ContainerSSH
+https://github.com/ContainerSSH/ContainerSSH
 
-## Steps Are
-* Create Config Server
-* Create Auth Server
-* Create Helm Chart
+## Repo contains
+- auth server
+- config server
+
+## Todo's
+- Fix Cert problems
+- Get Docker build test's running
+- Implement test for Kubernetes(try [kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
+- Create Helm Chart
