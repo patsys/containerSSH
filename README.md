@@ -8,5 +8,5 @@ https://github.com/ContainerSSH/ContainerSSH
 ## Todo's
 - Fix Cert problems
 - Get Docker build test's running
-- Implement test for Kubernetes(try [kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
+- Implement test for Kubernetes (try with [kind](https://kind.sigs.k8s.io/docs/user/quick-start/))
 - Create Helm Chart
