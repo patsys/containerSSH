@@ -6,3 +6,5 @@ Build the go program and run it with the '-config' flag and a config file look l
 
 ## TODO's
 - More Backends( e.g. Kubernetes resource)
+- Test config folder work
+
