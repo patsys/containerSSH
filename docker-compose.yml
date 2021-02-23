@@ -13,7 +13,7 @@ services:
       SCRIPT: |
         #!/bin/sh
         set -o pipefail
-        set -ex
+        set -e
         # Servercert
         cd /Auth
         if [ ! -f ca.crt ]; then
@@ -139,7 +139,16 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
-        sleep 30
+        for i in `seq 60` ; do
+          if nc -zvw1 configserver 8080 ; then
+            break
+          fi
+        done
+        for i in `seq 60` ; do
+          if nc -zvw1 authserver 8080 ; then
+            break
+          fi
+        done
         sed 's|example/ssh_host_rsa_key|/example/example/ssh_host_rsa_key|g' /example/example/config.yml >/tmp/config.yml
         sed -i 's|authServer/|/example/authServer/|g' /tmp/config.yml
         sed -i 's|configServer/|/example/configServer/|g' /tmp/config.yml
@@ -159,6 +168,28 @@ services:
     - Cert1:/example/authServer/example/clientCert1
     - AuthCert:/example/authServer/example/server
     - ConfigCert:/example/configServer/example/server/
+  sut:
+    image: alpine
+    entrypoint:
+    - /bin/sh
+    - -c
+    - |
+      set -ex
+      set -o pipefail
+      apk add --no-cache openssh-client
+      for i in `seq 150` ; do
+        if nc -zvw1 containerssh 8222; then
+          break
+        fi
+        sleep 1
+      done
+      ssh user2@containerssh -p 8222 -i /example/authServer/example/id_rsa echo connect
+    links:
+    - containerssh
+    depends_on:
+    - containerssh
+    volumes:
+    - .:/example
 volumes:
   Cert1: {}
   Cert2: {}

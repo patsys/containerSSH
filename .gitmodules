@@ -1,3 +1,6 @@
 [submodule "configServer/ContainerSSH"]
 	path = ContainerSSH
 	url = https://github.com/ContainerSSH/ContainerSSH.git
+[submodule "modules/http"]
+	path = modules/http
+	url = https://github.com/ContainerSSH/http.git
