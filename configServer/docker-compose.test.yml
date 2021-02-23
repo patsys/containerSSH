@@ -90,7 +90,7 @@ services:
         curl -f --cacert /example/server/ca.crt https://configserver:8080 && exit 1 || echo failed correct
         curl -f --cacert /example/server/ca.crt https://configserver:8080/config && exit 1 || echo failed correct
         curl --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1"}' https://configserver:8080/config | grep -q '{"config":{"backend":"kubernetes","kuberun":{"connection":{"host":"kubernetes.default.svc"},"pod":{"metadata":{"namespace":"default"},"spec":{"containers":[{"image":"containerssh/containerssh","name":"containerssh"}]}}}}}'
-        curl --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user2"}' https://configserver:8080/config | grep -q '{"config":{"backend":"docker","docker":"execution":{"image":"containerssh/containerssh"},"host":"dockerhost:2375"}}}'
+        curl --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user2"}' https://configserver:8080/config | grep -q '{"config":{"backend":"docker","docker":{"config":{"image":"ubuntu"},"connection":{"host":"dockerhost:2375"},"execution":{"image":"containerssh/containerssh"}}}}'
     volumes:
     - Cert1:/example/clientCert1
     - Cert2:/example/clientCert2
