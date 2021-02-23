@@ -4,14 +4,13 @@ pushd configServer/example/server
   openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CAServer"
   openssl genrsa -out server_key.pem 4096
   openssl req  -new -key server_key.pem -out server.req -subj  "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=localhost"
-  openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -days 1460 -outform PEM -out server_cert.pem
-
+  openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -extensions SAN -days 1460 -outform PEM -out server_cert.pem -extfile  <(cat /etc/ssl/openssl.cnf <(printf "\n[SAN]\nsubjectAltName=DNS:localhost"))
 popd
 pushd authServer/example/server
   openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CAServer"
   openssl genrsa -out server_key.pem 4096
   openssl req  -new -key server_key.pem -out server.req -subj  "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=localhost"
-  openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -days 1460 -outform PEM -out server_cert.pem
+  openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -extensions SAN -days 1460 -outform PEM -out server_cert.pem -extfile  <(cat /etc/ssl/openssl.cnf <(printf "\n[SAN]\nsubjectAltName=DNS:localhost"))
 
 # Clientcert 1
 popd
