@@ -8,3 +8,5 @@ Build the go program and run it with the '-config' flag and a config file look l
 - More Backends( e.g. Kubernetes resource)
 - LDAP Integration
 - Test config folder work
+- Audit logging endpoint
+- Lock/Bann to many wong logins
