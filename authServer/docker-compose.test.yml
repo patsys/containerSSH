@@ -91,7 +91,6 @@ services:
         curl -f --cacert /example/server/ca.crt https://authserver:8081/password && exit 1 || echo failed correct
         curl -f --cacert /example/server/ca.crt https://authserver:8081/pubkey && exit 1 || echo failed correct
         curl --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "1.1.1.1"}' https://authserver:8081/password | grep -q "true"
-        curl -f -u "test:test"  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "1.1.1.1"}' -v  https://authserver:8081/password | grep -q "true"
         curl -f --key /example/clientCert1/client.key --cert /example/clientCert1/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.4.12"}' https://authserver:8081/password | grep -q "true"
         curl -f --key /example/clientCert2/client.key --cert /example/clientCert2/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.5.230"}' https://authserver:8081/password | grep -q "true"
         curl -f --key /example/clientCert3/client.key --cert /example/clientCert3/client.crt  --cacert /example/server/ca.crt -d '{"username":"user1","passwordBase64":"dGVzdA==", "remoteAddress": "10.5.5.230"}' https://authserver:8081/password && exit 1 || echo failed correct

@@ -3,6 +3,7 @@ module github.com/patsys/containerSSH/configServer
 go 1.16
 
 require (
+	github.com/containerssh/configuration v0.9.7 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/gorilla/mux v1.8.0 // indirect

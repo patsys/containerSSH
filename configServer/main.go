@@ -1,94 +1,101 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
+	"github.com/containerssh/configuration"
+	"github.com/containerssh/http"
+	"github.com/containerssh/log"
+	"github.com/containerssh/service"
+	"github.com/containerssh/structutils"
 	"flag"
 	"io/ioutil"
 	"path/filepath"
     "sigs.k8s.io/yaml"
 	"os"
 	"github.com/golang/glog"
-	"net/http"
 	"strings"
-	"crypto/sha512"
-	"encoding/hex"
-	"encoding/json"
-	"github.com/imdario/mergo"
-//	"io"
-//	"encoding/base64"
 	"net"
+	"fmt"
+	"context"
+	"io"
 )
 
 
 type Config struct {
-	UserFolders []string `json:"userFolders,omitempty"`
+	UserFolders []string `json:"userFolders"`
 	Users map[string]User `json:"users"`
-	PropertiesFolders []string `json:"propertiesFolders,omitempty"`
+	PropertiesFolders []string `json:"propertiesFolders"`
 	Properties map[string]map[string]interface{} `json:"properties"`
-	Server Server `json:"server"`
+	Server http.ServerConfiguration `json:"server"`
+	Log log.Config
 }
 
 type User struct {
 	Groups		[]string `json:groups,omitempty`
 }
 
-
-type Server struct {
-	Auth Auth `json:"auth,omitempty"`
-	Tls Tls `json:"tls,omitempty"`
-	Listen string `json:"listen,omitempty`
+type myConfigReqHandler struct {
 }
 
-type Auth struct {
-	Credentials map[string]string `json:"credentials,omitempty"`
-	Mtls []Mtls `json:"mtls,omitempty"`
-}
-
-type CaFilters struct {
-	CommonName string `json:"commonName,omitempty"`
-	Organisation []string `json:"organization,omitempty"`
-	OrganizationUnit []string `json:"organizationUnit,omitempty"`
-}
-
-type Mtls struct {
-	Ca string `json:"ca,omitempty`
-}
-
-type Tls struct {
-	CertFile string `json:"cert,omitempty"`
-	KeyFile string `json:"key,omitempty"`
-}
-
-type ConfigRequest struct {
-    Username string `json:"username"`
-    SessionID string `json:"sessionId"`
-}
+type sureFireWriter struct {                                                        
+	backend io.Writer
+} 
 
 var (
 	cfg = &Config{}
 	configFlag string
+	tmpDir string
+	logger log.Logger
 )
 
-func basicAuth(w http.ResponseWriter, r *http.Request) bool {
+func (s *sureFireWriter) Write(p []byte) (n int, err error) {
+	n, err = s.backend.Write(p)           
+	if err != nil {                                                                          
+		// Ignore errors      
+		return len(p), nil                              
+	}                                                                   
+	return n, nil                          
+}          
 
-	u, p, ok := r.BasicAuth()
+func (m *myConfigReqHandler) OnConfig(
+    request configuration.ConfigRequest,
+) (config configuration.AppConfig, err error) {
+
+
+	appConfig := &configuration.AppConfig{}
+	user, ok := cfg.Users[request.Username]
 	if !ok {
-		w.WriteHeader(401)
-		return false
+		return *appConfig, fmt.Errorf("User not exist")
 	}
-	password, exist := cfg.Server.Auth.Credentials[u]
-	if !exist {
-		w.WriteHeader(401)
-		return false
+	
+	for _, group := range user.Groups {
+		if _, err := os.Stat(filepath.Join(tmpDir, group + ".yml")); err == nil {
+			file, err := os.Open(filepath.Join(tmpDir, group + ".yml"))
+			if err != nil {
+				logger.Errorf("Can not open Config file: %v", err)
+				return *appConfig, fmt.Errorf("Can not open Config file: %v", err)
+			}
+			loader, err := configuration.NewReaderLoader(
+				file,
+				logger,
+				configuration.FormatYAML,
+			)
+			if err != nil {
+				logger.Errorf("Config Load not Correct: %v", err)
+				return *appConfig, fmt.Errorf("Config Load not Correct: %v", err)
+			}
+
+			err = loader.Load(context.Background(), appConfig)
+			if err != nil {
+				logger.Errorf("Config not Correct: %v", err)
+				return *appConfig, fmt.Errorf("Config not Correct: %v", err)
+			}
+		} else {
+			logger.Errorf("File %s not exist", filepath.Join(tmpDir, group + ".yml"))
+		}
 	}
-	hashSum := sha512.Sum512([]byte(p))
-	if  hex.EncodeToString(hashSum[:]) != password {
-		w.WriteHeader(401)
-		return false
-	}
-	return true
+	return *appConfig, nil
 }
+
 
 func checkIp(remoteIp string, ips []string) bool {
 	if len(ips) == 0 { return true }
@@ -103,74 +110,131 @@ func checkIp(remoteIp string, ips []string) bool {
 	return false
 }
 
-func configHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if (len(r.TLS.VerifiedChains) > 0 ||  basicAuth(w, r)) {
-		reqBody, _ := ioutil.ReadAll(r.Body)
-		var req ConfigRequest
-	    json.Unmarshal(reqBody, &req)
-		user, ok := cfg.Users[req.Username]
-		if !ok {
-			w.WriteHeader(500)
-			return
-		}
-		var merged map[string]interface{}
-		for _, group := range user.Groups {
-			conf, ok := cfg.Properties[group]
-			if !ok {
-				w.WriteHeader(500)
-				return
-			}
-			if err := mergo.Merge(&merged, conf, mergo.WithOverride); err != nil {
-				w.WriteHeader(500)
-				return
- 	       }
-		}
-		json.NewEncoder(w).Encode(merged)
-	}
-	return
-}
 
 func main() {
-	http.HandleFunc("/config", configHandler)
-	if cfg.Server.Listen == "" {
-		if (cfg.Server.Tls == Tls{}) {
-		  cfg.Server.Listen = ":8080"
-		} else {
-		  cfg.Server.Listen = ":8443"
-		}
+	server, err := configuration.NewServer(
+		cfg.Server,
+	    &myConfigReqHandler{},
+	    logger,
+	)
+	if err != nil {
+    // Handle error
 	}
-	if (cfg.Server.Tls == Tls{}) {
-		glog.Fatal(http.ListenAndServe(cfg.Server.Listen, nil));
-	} else {
-		if (len(cfg.Server.Auth.Mtls) == 0) {
-			glog.Fatal(http.ListenAndServeTLS(cfg.Server.Listen, cfg.Server.Tls.CertFile, cfg.Server.Tls.KeyFile, nil))
-		} else {
-			caCertPool := x509.NewCertPool()
-			for _, mtls := range cfg.Server.Auth.Mtls {
-				caCert, err := ioutil.ReadFile(mtls.Ca)
+	lifecycle := service.NewLifecycle(server)
+	_ = lifecycle.Run()
+}
+
+func convertMapToFile(){
+	tmpDirLocal, err := ioutil.TempDir("", "config")
+	logger.Errorf("tmpdir: %s", tmpDirLocal)
+	if err != nil {
+		logger.Errorf("Can not Create tmp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+	tmpDir = tmpDirLocal
+	for propertiesKey, propertiesValue := range cfg.Properties {
+
+		config, ok := propertiesValue["config"]
+		if !ok {
+			continue
+		}
+
+        content, err := yaml.Marshal(config)
+		if err != nil {
+			logger.Errorf("Config file %s can not parsed: %v",config, err)
+			os.Exit(-1)
+		}
+
+		f, err := os.Create(filepath.Join(tmpDir, propertiesKey + ".yml"))
+		if err != nil {
+			logger.Errorf("Can not create file %s: %v", filepath.Join(tmpDir, propertiesKey + ".yml"), err)
+			os.Exit(-1)
+		}
+		defer f.Close()
+
+		_, err = f.Write(content)
+		if err != nil {
+			logger.Errorf("Can not write file %s: %v", filepath.Join(tmpDir, propertiesKey + ".yml"), err)
+			os.Exit(-1)
+		}
+		f.Close()
+
+		file, err := os.Open(filepath.Join(tmpDir, propertiesKey + ".yml"))
+		 _, err = configuration.NewReaderLoader(
+			file,
+    		logger,
+    		configuration.FormatYAML,
+		)
+		if err != nil {
+			logger.Errorf("Config failed: %v", err)
+			os.Exit(-1)
+		}		
+		appConfig := &configuration.AppConfig{}
+		loader, err := configuration.NewReaderLoader(
+			file,
+			logger,
+			configuration.FormatYAML,
+		)
+		if err != nil {
+			logger.Errorf("Config Load not Correct: %v", err)
+			os.Exit(-1)
+		}
+		err = loader.Load(context.Background(), appConfig)
+		if err != nil {
+			logger.Errorf("Can not parse file group %s: %v",propertiesKey, err)
+			os.Exit(-1)
+		}
+		file.Close()
+	}
+
+}
+
+func convertFileToMap() {
+	for _, path := range cfg.UserFolders {
+		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			user := User{}
+			if filepath.Ext(info.Name()) == ".yml" {
+				yamlFile, err := ioutil.ReadFile(configFlag)
 				if err != nil {
-					glog.Fatal(err.Error())
+					glog.Fatalf("Cannot get config file %s Get err   #%v ", path, err)
+					return err
 				}
-				caCertPool.AppendCertsFromPEM(caCert)
+				err = yaml.Unmarshal(yamlFile, &user)
+				if err != nil {
+					glog.Fatalf("Config parse error: %s", err)
+					return err
+				}
+				cfg.Users[strings.TrimSuffix(info.Name(), ".yml")] = user
 			}
-			
-			tlsConfig := &tls.Config{
-				ClientCAs: caCertPool,
-				ClientAuth: tls.VerifyClientCertIfGiven,
-				// VerifyPeerCertificate: mtlsAuth,
-			}
-			tlsConfig.BuildNameToCertificate()
-
-			server := &http.Server{
-				Addr:      cfg.Server.Listen,
-				TLSConfig: tlsConfig,
-			}
-
-			glog.Fatal(server.ListenAndServeTLS(cfg.Server.Tls.CertFile, cfg.Server.Tls.KeyFile))
+			return nil
+		})
+		if err != nil {
+			os.Exit(-1)
 		}
 	}
-
+	
+	for _, path := range cfg.PropertiesFolders {
+		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			properties := map[string]interface{}{}
+			if filepath.Ext(info.Name()) == ".yml" {
+				yamlFile, err := ioutil.ReadFile(configFlag)
+				if err != nil {
+					glog.Fatalf("Cannot get config file %s Get err   #%v ", path, err)
+					return err
+				}
+				err = yaml.Unmarshal(yamlFile, &properties)
+				if err != nil {
+					glog.Fatalf("Config parse error: %s", err)
+					return err
+				}
+				cfg.Properties[strings.TrimSuffix(info.Name(), ".yml")] = properties
+			}
+			return nil
+		})
+		if err != nil {
+			os.Exit(-1)
+		}
+	}
 }
 
 func init() {
@@ -204,30 +268,20 @@ func init() {
 		os.Exit(-1)
 	}
 
+
 	if cfg.UserFolders == nil { cfg.UserFolders = []string{} }
 	if cfg.Users == nil { cfg.Users = make(map[string]User) }
 
-	for _, path := range cfg.UserFolders {
-		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-			user := User{}
-			if filepath.Ext(info.Name()) == ".yml" {
-				yamlFile, err := ioutil.ReadFile(configFlag)
-				if err != nil {
-					glog.Fatalf("Cannot get config file %s Get err   #%v ", path, err)
-					return err
-				}
-				err = yaml.Unmarshal(yamlFile, &user)
-				if err != nil {
-					glog.Fatalf("Config parse error: %s", err)
-					return err
-				}
-				cfg.Users[strings.TrimSuffix(info.Name(), ".yml")] = user
-			}
-			return nil
-		})
-		if err != nil {
-			os.Exit(-1)
-		}
+	structutils.Defaults(&cfg.Log)
+	structutils.Defaults(&cfg.Server)
+
+	loggerLocal, err :=  log.NewFactory(&sureFireWriter{os.Stdout}).Make(cfg.Log, "")
+	if err != nil {
+		panic("Create Logger failed")
 	}
+	logger = loggerLocal
+	convertFileToMap()
+	convertMapToFile()
+
 }
 
