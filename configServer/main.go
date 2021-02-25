@@ -126,7 +126,6 @@ func main() {
 
 func convertMapToFile(){
 	tmpDirLocal, err := ioutil.TempDir("", "config")
-	logger.Errorf("tmpdir: %s", tmpDirLocal)
 	if err != nil {
 		logger.Errorf("Can not Create tmp dir: %v", err)
 	}
