@@ -28,10 +28,10 @@ type Config struct {
 }
 
 type User struct {
-	Password	string `json:"password,omitempty"`
-	PublicKeys	[]string `json:"publicKeys,omitempty"`
-	Ips			[]string `json:ips,omitempty`
-	Groups		[]string `json:groups,omitempty`
+	Password	string `json:"password"`
+	PublicKeys	[]string `json:"publicKeys"`
+	Ips			[]string `json:ips`
+	Groups		[]string `json:groups`
 }
 
 type sureFireWriter struct {
@@ -56,22 +56,31 @@ func (h *myHandler) OnPassword(
     RemoteAddress string,
     ConnectionID string,
 ) (bool, error) {
-		user, ok := cfg.Users[Username]
-		if !ok {
-			return false, nil // Username not existst 
-		}
+	logger.Debugf("Password Username %s, Address: %s, ConnectionID: %s Password: %s", Username, RemoteAddress, ConnectionID, string(Password))
+	user, ok := cfg.Users[Username]
+	if !ok {
+		logger.Errorf("Audit(password): Username %s, Address: %s, CennectionID: %s", Username, RemoteAddress, ConnectionID)
+		logger.Debugf("Password Username(%s) not exist", Username)
+		return false, nil // Username not existst 
+	}
 
-		hashSum := sha512.Sum512(Password)
-		if hex.EncodeToString(hashSum[:]) !=  user.Password {
-			return false, nil // Password not correct
-		} else {
-			if checkIp(RemoteAddress, user.Ips){
-				return true, nil // all passed
-			}else{
-				return false, nil // Ip not allowed
-			}
+	hashSum := sha512.Sum512(Password)
+	passwordSHA := hex.EncodeToString(hashSum[:])
+	if passwordSHA !=  user.Password {
+		logger.Errorf("Audit(password): Username %s, Address: %s, CennectionID: %s", Username, RemoteAddress, ConnectionID)
+		logger.Debugf("Password Password(%s) wrong", passwordSHA)
+		return false, nil // Password not correct
+	} else {
+		if checkIp(RemoteAddress, user.Ips){
+			return true, nil // all passed
+		}else{
+			logger.Errorf("Audit(password): Username %s, Address: %s, CennectionID: %s", Username, RemoteAddress, ConnectionID)
+			logger.Debugf("Password IP(%s) not allowed", RemoteAddress)
+			return false, nil // Ip not allowed
 		}
-    return false, nil
+	}
+	logger.Errorf("Audit(password): Username %s, Address: %s, CennectionID: %s", Username, RemoteAddress, ConnectionID)
+	return false, nil
 }
 
 func (h *myHandler) OnPubKey(
@@ -80,19 +89,26 @@ func (h *myHandler) OnPubKey(
     RemoteAddress string,
     ConnectionID string,
 ) (bool, error) {
+	logger.Debugf("Pubkey Username %s, Address: %s, ConnectionID: %s Pubkey: %s", Username, RemoteAddress, ConnectionID, PublicKey)
 	user, ok := cfg.Users[Username]
 	if !ok {
+		logger.Errorf("Audit(pubKey): Username %s, Address: %s, CennectionID: %s", Username, RemoteAddress, ConnectionID)
+		logger.Debugf("Pubkey Username(%s) not exist", Username)
 		return false, nil // Uesr not exist
 	}
 	for _, pubKey := range user.PublicKeys {
-		if (PublicKey == pubKey) {
+		if strings.Compare(PublicKey,pubKey) == 0 {
 			if checkIp(RemoteAddress, user.Ips){
 				return true, nil // all passed
 			} else{
+				logger.Errorf("Audit: Username %s, Address: %s", Username, RemoteAddress)
+				logger.Debugf("Pubkey IP(%s) not allowed", RemoteAddress)
 				return false, nil // Ip not allowed 
 			}
 		}
 	}
+	logger.Errorf("Audit: Username %s, Address: %s", Username, RemoteAddress)
+	logger.Debugf("Pubkey Key(%s) not exist", PublicKey)
 	return false, nil // Default response
 }
 
@@ -118,6 +134,7 @@ func checkIp(remoteIp string, ips []string) bool {
 
 func runServer(lifecycle service.Lifecycle){
 	if err := lifecycle.Run(); err != nil {
+		panic(err)
 		logger.Errorf("Server stoppt: %v", err)
 	}
 }
@@ -133,8 +150,7 @@ func main() {
 	  os.Exit(-1)
   }
    lifecycle := service.NewLifecycle(server)
-  
-  runServer(lifecycle)
+   runServer(lifecycle)
 
   // When done, shut down server with an optional context for the shutdown deadline
   //  lifecycle.Stop(context.Background())
@@ -170,10 +186,11 @@ func init() {
 	structutils.Defaults(&cfg.Server)
 	structutils.Defaults(&cfg.Log)
 
-	logger, err :=  log.NewFactory(&sureFireWriter{os.Stdout}).Make(cfg.Log, "")
+	loggerLocal, err :=  log.NewFactory(&sureFireWriter{os.Stdout}).Make(cfg.Log, "")
 	if err != nil {
 		panic(err)
 	}
+	logger = loggerLocal
 
 	if cfg.UserFolders == nil { cfg.UserFolders = []string{} }
 	if cfg.Users == nil { cfg.Users = make(map[string]User) }

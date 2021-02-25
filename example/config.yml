@@ -4,6 +4,7 @@ ssh:
   listen: 0.0.0.0:8222
   hostkeys:
   - example/ssh_host_rsa_key
+  - example/ssh_host_ed25519_key
 auth:
   url: "https://localhost:8081"
   cacert: authServer/example/server/ca.crt

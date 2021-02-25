@@ -20,14 +20,16 @@ services:
           openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CAServer"
           openssl genrsa -out server_key.pem 4096
           openssl req  -new -key server_key.pem -out server.req -subj  "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=authserver"
-          openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -extensions SAN -days 1460 -outform PEM -out server_cert.pem -extfile  <(cat /etc/ssl/openssl.cnf <(printf "\n[SAN]\nsubjectAltName=DNS:authserver"))
+          cp /etc/ssl/openssl.cnf /tmp/openssl.cnf && cat /etc/ssl/openssl.cnf && echo -e "\n[SAN]\nsubjectAltName=DNS:authserver" >> /tmp/openssl.cnf
+          openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -extensions SAN -days 1460 -outform PEM -out server_cert.pem -extfile /tmp/openssl.cnf
         fi
         cd /Config
         if [ ! -f ca.crt ]; then
           openssl req -nodes -newkey rsa:4096 -keyform PEM -keyout ca.key -x509 -days 3650 -outform PEM -out ca.crt -subj "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=CAServer"
           openssl genrsa -out server_key.pem 4096
           openssl req  -new -key server_key.pem -out server.req -subj  "/C=DE/ST=OverTheAir/L=Springfield/O=Dreams/CN=configserver"
-          openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -extensions SAN -days 1460 -outform PEM -out server_cert.pem -extfile  <(cat /etc/ssl/openssl.cnf <(printf "\n[SAN]\nsubjectAltName=DNS:configserver"))
+          cp /etc/ssl/openssl.cnf /tmp/openssl.cnf && cat /etc/ssl/openssl.cnf && echo -e "\n[SAN]\nsubjectAltName=DNS:configserver" >> /tmp/openssl.cnf
+          openssl x509 -req -in server.req -CA ca.crt -CAkey ca.key -set_serial 100 -extensions server -extensions SAN -days 1460 -outform PEM -out server_cert.pem -extfile /tmp/openssl.cnf
         fi
         # Clientcert 1
         cd /Cert1
@@ -139,6 +141,8 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
+        set -ex
+        cp -r /tmp/example/example /example/
         for i in `seq 60` ; do
           if nc -zvw1 configserver 8080 ; then
             break
@@ -149,10 +153,16 @@ services:
             break
           fi
         done
-        sed 's|example/ssh_host_rsa_key|/example/example/ssh_host_rsa_key|g' /example/example/config.yml >/tmp/config.yml
-        sed -i 's|authServer/|/example/authServer/|g' /tmp/config.yml
-        sed -i 's|configServer/|/example/configServer/|g' /tmp/config.yml
-    command: ["-config","/tmp/config.yml"]
+        rm -rf /example/example/ssh_host_*
+        ssh-keygen -q -N "" -t dsa -f /example/example/ssh_host_dsa_key
+        ssh-keygen -q -N "" -t rsa -b 4096 -f /example/example/ssh_host_rsa_key
+        ssh-keygen -q -N "" -t ecdsa -f /example/example/ssh_host_ecdsa_key
+        ssh-keygen -q -N "" -t ed25519 -f /example/example/ssh_host_ed25519_key
+        ls -R /example/
+        sed -i 's|authServer/|/example/authServer/|g' /example/example/config.yml
+        sed -i 's|configServer/|/example/configServer/|g' /example/example/config.yml
+        sed -i 's|example/ssh_host_|/example/example/ssh_host_|g' /example/example/config.yml
+    command: ["-config","/example/example/config.yml"]
     links:
     - configserver
     - authserver
@@ -163,7 +173,7 @@ services:
     - authserver
     - dockerhost
     volumes:
-    - .:/example
+    - $PWD:/tmp/example
     - Cert1:/example/configServer/example/clientCert1
     - Cert1:/example/authServer/example/clientCert1
     - AuthCert:/example/authServer/example/server
@@ -176,14 +186,18 @@ services:
     - |
       set -ex
       set -o pipefail
-      apk add --no-cache openssh-client
+      apk add --no-cache openssh-client sshpass
       for i in `seq 150` ; do
         if nc -zvw1 containerssh 8222; then
           break
         fi
         sleep 1
       done
-      ssh user2@containerssh -p 8222 -i /example/authServer/example/id_rsa echo connect
+      mkdir -p ~/.ssh
+      ip=`nslookup containerssh | grep Address | awk 'FNR==2{print $$2}'`
+      ssh-keyscan -p 8222 -H $$ip > ~/.ssh/known_hosts
+      sshpass -p test ssh -o StrictHostKeyChecking=no user2@containerssh -p 8222 echo connect
+      ssh -o StrictHostKeyChecking=no user2@containerssh -p 8222 -i /example/authServer/example/id_rsa echo connect
     links:
     - containerssh
     depends_on:

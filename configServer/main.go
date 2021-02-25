@@ -36,9 +36,9 @@ type User struct {
 type myConfigReqHandler struct {
 }
 
-type sureFireWriter struct {                                                        
+type sureFireWriter struct {
 	backend io.Writer
-} 
+}
 
 var (
 	cfg = &Config{}
@@ -48,13 +48,13 @@ var (
 )
 
 func (s *sureFireWriter) Write(p []byte) (n int, err error) {
-	n, err = s.backend.Write(p)           
-	if err != nil {                                                                          
+	n, err = s.backend.Write(p)
+	if err != nil {
 		// Ignore errors      
-		return len(p), nil                              
-	}                                                                   
-	return n, nil                          
-}          
+		return len(p), nil
+	}
+	return n, nil
+}
 
 func (m *myConfigReqHandler) OnConfig(
     request configuration.ConfigRequest,
@@ -66,7 +66,7 @@ func (m *myConfigReqHandler) OnConfig(
 	if !ok {
 		return *appConfig, fmt.Errorf("User not exist")
 	}
-	
+
 	for _, group := range user.Groups {
 		if _, err := os.Stat(filepath.Join(tmpDir, group + ".yml")); err == nil {
 			file, err := os.Open(filepath.Join(tmpDir, group + ".yml"))
