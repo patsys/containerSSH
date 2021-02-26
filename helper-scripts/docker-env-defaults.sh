@@ -1,6 +1,6 @@
 if [[ ! -v IMAGEPREFIX ]]; then 
-  export IMAGEPREFIX=""; then
-  if [[ -v DOCKER_REPO ]]
+  export IMAGEPREFIX=""
+  if [[ -v DOCKER_REPO ]]; then
     export IMAGEPREFIX="$(basename "$(dirname $DOCKER_REPO)")"/
   fi
 fi

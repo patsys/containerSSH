@@ -166,7 +166,7 @@ services:
     links:
     - configserver
     - authserver
-    - dockerhost: docker
+    - dockerhost:docker
     depends_on:
     - openssl
     - configserver
@@ -184,16 +184,19 @@ services:
     - /bin/sh
     - -c
     - |
+      set -e
+      set -o pipefail
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
       for i in `seq 60` ; do
           if nc -zvw1 docker 2376 ; then
             break
           fi
         done
+        mv kind* kind
         chmod +x ./kind
-      ./kind create cluster
+        ./kind create cluster
     links:
-    - dockerhost: docker
+    - dockerhost:docker
     depends_on:
     - dockerhost
   sut:
