@@ -37,8 +37,6 @@ services:
     - Cert3:/Cert3
     - Servercert:/Server
   authserver:
-    build:
-      context: .
     image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME$DOCKER_TAG
     build: .
     environment:

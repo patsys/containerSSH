@@ -62,8 +62,6 @@ services:
     - AuthCert:/Auth
     - ConfigCert:/Config
   authserver:
-    build:
-      context: authServer
     image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME$DOCKER_TAG
     environment:
       PRE_SCRIPT: |
@@ -104,8 +102,6 @@ services:
     - ConfigConfig:/conf
     - ./configServer/example:/example
   configserver:
-    build:
-      context: configServer
     image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG
     environment:
       PRE_SCRIPT: |
@@ -136,7 +132,6 @@ services:
     - ConfigCert:/example/server
     - DockerCerts:/example/docker
   containerssh:
-    build: .
     image: $IMAGEPREFIX$CONTAINERSSH_IMAGE_NAME$DOCKER_TAG
     environment:
       PRE_SCRIPT: |

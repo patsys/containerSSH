@@ -11,7 +11,7 @@ if [[ ! -v IMAGEPREFIX ]]; then
 fi
 if [[ ! -v CONTAINERSSH_IMAGE_NAME ]]; then
   if [[ -v IMAGE_NAME ]]; then
-    export CONTAINERSSH_IMAGE_NAME="$(basename $IMAGE_NAME)"
+    export CONTAINERSSH_IMAGE_NAME="$(basename $DOCKER_REPO)"
   else
     export CONTAINERSSH_IMAGE_NAME=containerssh
   fi

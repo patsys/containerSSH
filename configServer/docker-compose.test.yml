@@ -38,7 +38,6 @@ services:
     - Servercert:/Server
   configserver:
     image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG
-    build: .
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
