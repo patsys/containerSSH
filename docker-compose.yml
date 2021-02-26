@@ -1,6 +1,6 @@
 version: '3'
 services:
-  dockerhost: 
+  docker: 
     privileged: true
     image: docker:dind
     environment: 
@@ -98,7 +98,7 @@ services:
         cp /example/config.yml /conf
         yq --rawfile cacert /cert/server/ca.pem --rawfile key /cert/client/key.pem --rawfile cert /cert/client/cert.pem  -Yi '.properties.docker.config.docker.connection.cert=$$cert,.properties.docker.config.docker.connect.cert=$$key,.properties.docker.config.docker.connection.cacert=$$cacert' /conf/config.yml
     depends_on:
-    - dockerhost
+    - docker
     volumes:
     - DockerCerts:/cert
     - ConfigConfig:/conf
@@ -126,7 +126,7 @@ services:
     command: ["-config","/tmp/config.yml"]
     depends_on:
     - openssl
-    - dockerhost
+    - docker
     - addcert
     volumes:
     - ConfigConfig:/conf
@@ -166,12 +166,12 @@ services:
     links:
     - configserver
     - authserver
-    - dockerhost
+    - docker
     depends_on:
     - openssl
     - configserver
     - authserver
-    - dockerhost
+    - docker
     volumes:
     - $PWD:/tmp/example
     - Cert1:/example/configServer/example/clientCert1
@@ -185,8 +185,17 @@ services:
     - -c
     - |
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
-      chmod +x ./kind
-
+      for i in `seq 60` ; do
+          if nc -zvw1 docker 2376 ; then
+            break
+          fi
+        done
+        chmod +x ./kind
+      ./kind create cluster
+    links:
+    - docker
+    depends_on:
+    - docker
   sut:
     image: alpine
     entrypoint:
