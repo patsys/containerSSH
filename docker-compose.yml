@@ -178,6 +178,15 @@ services:
     - Cert1:/example/authServer/example/clientCert1
     - AuthCert:/example/authServer/example/server
     - ConfigCert:/example/configServer/example/server/
+  kind:
+    image: alpine
+    entrypoint:
+    - /bin/sh
+    - -c
+    - |
+      curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
+      chmod +x ./kind
+
   sut:
     image: alpine
     entrypoint:

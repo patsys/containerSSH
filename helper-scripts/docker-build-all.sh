@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 docker build -t $IMAGEPREFIX$IMAGE_NAME .
 pushd authServer
 docker build -t $IMAGE_PREFIXauthserver .
