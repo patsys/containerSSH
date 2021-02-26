@@ -177,7 +177,9 @@ services:
     image: docker
     environment:
       DOCKER_TLS_CERTDIR: /docker/certs
-      DOCKER_HOST: tcp://dockerhost:2375
+      DOCKER_HOST: tcp://dockerhost:2376
+      DOCKER_TLS_VERIFY: "true"
+      DOCKER_CERT_PATH: /docker/certs/client
     entrypoint:
     - /bin/sh
     - -c
