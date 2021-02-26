@@ -6,5 +6,5 @@ pushd authServer
 docker build -t $IMAGE_PREFIX$AUTHSERVER_IMAGE_NAME$DOCKER_TAG .
 popd
 pushd configServer
-docker build -t $IAGE_PREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG .
+docker build -t $IMAGE_PREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG .
 popd

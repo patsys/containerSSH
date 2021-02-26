@@ -161,7 +161,7 @@ services:
     links:
     - configserver
     - authserver
-    - dockerhost
+    - dockerhost:docker
     depends_on:
     - openssl
     - configserver
@@ -177,7 +177,7 @@ services:
     image: docker
     environment:
       DOCKER_TLS_CERTDIR: /docker/certs
-      DOCKER_HOST: tcp://dockerhost:2376
+      DOCKER_HOST: tcp://docker:2376
       DOCKER_TLS_VERIFY: "true"
       DOCKER_CERT_PATH: /docker/certs/client
     entrypoint:
@@ -189,14 +189,14 @@ services:
       apk add --no-cache curl
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
       for i in `seq 60` ; do
-          if nc -zvw1 dockerhost 2376 ; then
+          if nc -zvw1 docker 2376 ; then
             break
           fi
         done
         chmod +x ./kind
-        ./kind create cluster
+        ./kind create cluster --wait 5m
     links:
-    - dockerhost
+    - dockerhost:docker
     depends_on:
     - dockerhost
     volumes:
