@@ -13,7 +13,7 @@ else
 fi
 popd
 pushd configServer
-docker-compose -f docker-compose.test.yml -p authserver up -d
+docker-compose -f docker-compose.test.yml -p configserver up -d
 ret="$(docker wait authserver_sut_1)"
 if [ $ret -ne 0 ]; then
   echo "configserver test failed"
@@ -21,13 +21,15 @@ if [ $ret -ne 0 ]; then
 else
   echo "configserver test success"
 fi
+docker-compose -f docker-compose.test.yml -p configserver down
 popd
-docker-compose -f docker-compose.test.yml -p authserver up -d
-ret="$(docker wait authserver_sut_1)"
+docker-compose -f docker-compose.test.yml -p containerssh up -d
+ret="$(docker wait contaienerssh_sut_1)"
 if [ $ret -ne 0 ]; then
-  echo "configserver test failed"
+  echo "containerssh test failed"
   testSuccess=1
 else
-  echo "configserver test success"
+  echo "containerssh test success"
 fi
+docker-compose -f docker-compose.test.yml -p containerssh down 
 exit $testSuccess
