@@ -1,3 +1,8 @@
+if [[ ! -v DOCKER_TAG ]]; then 
+  export DOCKER_TAG=""
+else
+  export DOCKER_TAG=":$DOCKER_TAG"
+fi
 if [[ ! -v IMAGEPREFIX ]]; then 
   export IMAGEPREFIX=""
   if [[ -v DOCKER_REPO ]]; then

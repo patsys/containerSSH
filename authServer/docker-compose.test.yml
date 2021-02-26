@@ -39,7 +39,7 @@ services:
   authserver:
     build:
       context: .
-    image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME
+    image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME$DOCKER_TAG
     build: .
     environment:
       PRE_SCRIPT: |

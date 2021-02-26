@@ -64,7 +64,7 @@ services:
   authserver:
     build:
       context: authServer
-    image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME
+    image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME$DOCKER_TAG
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
@@ -106,7 +106,7 @@ services:
   configserver:
     build:
       context: configServer
-    image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME
+    image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
@@ -137,7 +137,7 @@ services:
     - DockerCerts:/example/docker
   containerssh:
     build: .
-    image: $IMAGEPREFIX$CONTAINERSSH_IMAGE_NAME
+    image: $IMAGEPREFIX$CONTAINERSSH_IMAGE_NAME$DOCKER_TAG
     environment:
       PRE_SCRIPT: |
         #!/bin/sh

@@ -37,7 +37,7 @@ services:
     - Cert3:/Cert3
     - Servercert:/Server
   configserver:
-    image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME
+    image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG
     build: .
     environment:
       PRE_SCRIPT: |
