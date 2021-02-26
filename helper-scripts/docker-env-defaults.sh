@@ -1,5 +1,8 @@
-if [[ ! -v IMAGEPREFIX ]] && [[ -v DOCKER_REPO ]]
-  export IMAGEPREFIX="$(basename "$(dirname $DOCKER_REPO)"/
+if [[ ! -v IMAGEPREFIX ]] 
+  export IMAGEPREFIX=""
+  if [[ -v DOCKER_REPO ]]
+    export IMAGEPREFIX="$(basename "$(dirname $DOCKER_REPO)")"/
+  fi
 fi
 if [[ ! -v CONTAINERSSH_IMAGE_NAME ]]; then
   if [[ -v IMAGE_NAME ]]; then
