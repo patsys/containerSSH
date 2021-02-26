@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 . ./helper-scripts/docker-env-defaults.sh
 docker build -t $IMAGEPREFIX$CONTAINERSSH_IMAGE_NAME  .
 pushd authServer

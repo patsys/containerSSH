@@ -64,7 +64,7 @@ services:
   authserver:
     build:
       context: authServer
-    image: patsys/containerssh-authserver
+    image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
@@ -106,7 +106,7 @@ services:
   configserver:
     build:
       context: configServer
-    image: patsys/containerssh-configserver
+    image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
@@ -137,7 +137,7 @@ services:
     - DockerCerts:/example/docker
   containerssh:
     build: .
-    image: patsys/containerssh
+    image: $IMAGEPREFIX$CONTAINERSSH_IMAGE_NAME
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
@@ -166,7 +166,7 @@ services:
     links:
     - configserver
     - authserver
-    - dockerhost:docker
+    - dockerhost
     depends_on:
     - openssl
     - configserver
@@ -179,26 +179,31 @@ services:
     - AuthCert:/example/authServer/example/server
     - ConfigCert:/example/configServer/example/server/
   kind:
-    image: alpine
+    image: docker
+    environment:
+      DOCKER_TLS_CERTDIR: /docker/certs
+      DOCKER_HOST: tcp://dockerhost:2375
     entrypoint:
     - /bin/sh
     - -c
     - |
       set -e
       set -o pipefail
+      apk add --no-cache curl
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
       for i in `seq 60` ; do
-          if nc -zvw1 docker 2376 ; then
+          if nc -zvw1 dockerhost 2376 ; then
             break
           fi
         done
-        mv kind* kind
         chmod +x ./kind
         ./kind create cluster
     links:
-    - dockerhost:docker
+    - dockerhost
     depends_on:
     - dockerhost
+    volumes:
+    - DockerCerts:/docker/certs:ro 
   sut:
     image: alpine
     entrypoint:

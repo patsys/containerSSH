@@ -1,0 +1,2 @@
+#!/bin/bash
+./helper-scripts/docker-test-all.sh

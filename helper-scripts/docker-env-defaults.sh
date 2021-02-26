@@ -12,6 +12,6 @@ if [[ ! -v CONTAINERSSH_IMAGE_NAME ]]; then
   fi
 fi
 
-export AUTHSERVER_IMAGE_NAME="${AUTHSERVER_IMAGE_NAME:-authserver}"
-export CONFIGSERVER_IMAGE_NAME="${CONFIGSERVER_IMAGE_NAME:-conigserver}"
+export AUTHSERVER_IMAGE_NAME="${AUTHSERVER_IMAGE_NAME:-containerssh-authserver}"
+export CONFIGSERVER_IMAGE_NAME="${CONFIGSERVER_IMAGE_NAME:-containerssh-conigserver}"
 

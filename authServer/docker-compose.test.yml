@@ -37,7 +37,10 @@ services:
     - Cert3:/Cert3
     - Servercert:/Server
   authserver:
-    image: $IMAGE_NAME
+    build:
+      context: .
+    image: $IMAGEPREFIX$AUTHSERVER_IMAGE_NAME
+    build: .
     environment:
       PRE_SCRIPT: |
         #!/bin/sh

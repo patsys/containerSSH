@@ -37,7 +37,8 @@ services:
     - Cert3:/Cert3
     - Servercert:/Server
   configserver:
-    image: $IMAGE_NAME
+    image: $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME
+    build: .
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
