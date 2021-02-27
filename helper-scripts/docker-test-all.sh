@@ -24,7 +24,8 @@ else
 fi
 docker-compose -f docker-compose.test.yml -p configserver down
 popd
-docker-compose -f docker-compose.test.yml -p containerssh up -d
+bash -c '
+sleep 5
 ret="$(docker wait containerssh_sut_1)"
 if [ $ret -ne 0 ]; then
   echo "containerssh test failed"
@@ -34,4 +35,6 @@ else
 fi
 sleep 600
 docker-compose -f docker-compose.test.yml -p containerssh down 
+' &
+docker-compose -f docker-compose.test.yml -p containerssh up 
 exit $testSuccess
