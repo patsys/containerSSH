@@ -32,5 +32,6 @@ if [ $ret -ne 0 ]; then
 else
   echo "containerssh test success"
 fi
+sleep 600
 docker-compose -f docker-compose.test.yml -p containerssh down 
 exit $testSuccess

@@ -153,7 +153,6 @@ services:
         ssh-keygen -q -N "" -t rsa -b 4096 -f /example/example/ssh_host_rsa_key
         ssh-keygen -q -N "" -t ecdsa -f /example/example/ssh_host_ecdsa_key
         ssh-keygen -q -N "" -t ed25519 -f /example/example/ssh_host_ed25519_key
-        ls -R /example/
         sed -i 's|authServer/|/example/authServer/|g' /example/example/config.yml
         sed -i 's|configServer/|/example/configServer/|g' /example/example/config.yml
         sed -i 's|example/ssh_host_|/example/example/ssh_host_|g' /example/example/config.yml
@@ -174,7 +173,8 @@ services:
     - AuthCert:/example/authServer/example/server
     - ConfigCert:/example/configServer/example/server/
   kind:
-    image: docker
+    privileged: true
+    image: docker:dind
     environment:
       DOCKER_TLS_CERTDIR: /docker/certs
       DOCKER_HOST: tcp://docker:2376
@@ -184,6 +184,7 @@ services:
     - /bin/sh
     - -c
     - |
+      set -e
       set -o pipefail
       apk add --no-cache curl
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
@@ -194,7 +195,6 @@ services:
         done
         chmod +x ./kind
         ./kind create cluster --wait 60m
-        sleep 3600
     links:
     - dockerhost:docker
     depends_on:
