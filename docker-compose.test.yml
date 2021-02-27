@@ -189,12 +189,17 @@ services:
       apk add --no-cache curl
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
       for i in `seq 60` ; do
-          if nc -zvw1 docker 2376 ; then
-            break
-          fi
-        done
-        chmod +x ./kind
-        ./kind create cluster --wait 60m
+        if nc -zvw1 docker 2376 ; then
+          break
+        fi
+      done
+      for i in `seq 60` ; do
+        if [ -f /docker/certs/client/ca.pem]; then
+          break
+        fi
+      done
+      chmod +x ./kind
+      ./kind create cluster --wait 60m
     links:
     - dockerhost:docker
     depends_on:
