@@ -194,7 +194,7 @@ services:
         fi
       done
       for i in `seq 60` ; do
-        if [ -f /docker/certs/client/ca.pem]; then
+        if [ -f /docker/certs/client/ca.pem ]; then
           break
         fi
       done
