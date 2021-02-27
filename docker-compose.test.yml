@@ -184,7 +184,6 @@ services:
     - /bin/sh
     - -c
     - |
-      set -e
       set -o pipefail
       apk add --no-cache curl
       curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
@@ -194,7 +193,8 @@ services:
           fi
         done
         chmod +x ./kind
-        ./kind create cluster --wait 5m
+        ./kind create cluster --wait 60m
+        sleep 3600
     links:
     - dockerhost:docker
     depends_on:
