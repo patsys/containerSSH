@@ -193,10 +193,11 @@ services:
           break
         fi
       done
-      for i in `seq 60` ; do
+      for i in `seq 300` ; do
         if [ -f /docker/certs/client/ca.pem ]; then
           break
         fi
+        echo "wait for client cert"
       done
       chmod +x ./kind
       ./kind create cluster --wait 60m
