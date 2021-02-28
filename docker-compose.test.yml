@@ -136,7 +136,7 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
-        set -ex
+        set -e
         cp -r /tmp/example/example /example/
         for i in `seq 60` ; do
           if nc -zvw1 configserver 8080 ; then
@@ -213,7 +213,7 @@ services:
     - -c
     - |
       sleep 600
-      set -ex
+      set -e
       set -o pipefail
       apk add --no-cache openssh-client sshpass
       for i in `seq 150` ; do
