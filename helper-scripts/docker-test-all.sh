@@ -2,13 +2,15 @@
 function test {
   pushd $1
 
-  ( for i in `seq 150` ; do
-    if [ $(docker ps -a -f NAME=$2_sut_1 | wc -l) -ge 2 ]; then
+  ( for i in `seq 300` ; do
+    if docker ps -a -f NAME=$2_sut_1 | grep -q Up; then
+      sleep 2
       break;
     fi
     sleep 1
   done
   ret="$(docker wait $2_sut_1)"
+  echo "ret: $ret"
   sleep 1
   docker-compose -f docker-compose.test.yml ps
   docker-compose -f docker-compose.test.yml -p $2 down
@@ -33,11 +35,12 @@ function test {
     testSuccess=1
     return 1
   else
-    echo "containerssh test success"
+    echo "$2 test success"
     return 0
   fi
   return $ret
 }
+set -x
 testSuccess=0
 test authServer authserver
 test configServer configserver
