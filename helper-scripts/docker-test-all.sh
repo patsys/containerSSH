@@ -4,7 +4,7 @@ function test {
 
   ( for i in `seq 300` ; do
     if docker ps -a -f NAME=$2_sut_1 | grep -q Up; then
-      sleep 2
+      sleep 1
       break;
     fi
     sleep 1
