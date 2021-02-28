@@ -1,2 +1,3 @@
 #!/bin/bash
+. ./helper-scripts/docker-env-defaults.sh
 ./helper-scripts/docker-push-all.sh
