@@ -212,6 +212,7 @@ services:
     - /bin/sh
     - -c
     - |
+      sleep 600
       set -ex
       set -o pipefail
       apk add --no-cache openssh-client sshpass
