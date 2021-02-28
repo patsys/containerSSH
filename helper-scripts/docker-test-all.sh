@@ -40,7 +40,7 @@ function test {
   fi
   return $ret
 }
-set -x
+set -e
 testSuccess=0
 test authServer authserver
 test configServer configserver
