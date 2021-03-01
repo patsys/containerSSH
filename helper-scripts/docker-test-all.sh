@@ -42,7 +42,7 @@ function test {
 }
 set -e
 testSuccess=0
-test authServer authserver
-test configServer configserver
-test . containerssh
+test authServer authserver || echo ""
+test configServer configserver || echo ""
+test . containerssh || echo ""
 exit $testSuccess
