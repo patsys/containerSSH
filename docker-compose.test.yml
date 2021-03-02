@@ -66,6 +66,7 @@ services:
       PRE_SCRIPT: |
         #!/bin/sh
         set -e
+        if [ "$DEBUG_AUTHSERVER" == "true" ]; then set -x; fi
         for i in `seq 180` ; do
           if [ -f /example/server/server_cert.pem ]; then
             break
@@ -107,6 +108,7 @@ services:
       PRE_SCRIPT: |
         #!/bin/sh
         set -e
+        if [ "$DEBUG_CONFIGSERVER" == "true" ]; then set -x; fi
         for i in `seq 180` ; do
           if [ -f /conf/config.yml ]; then
             break
@@ -156,6 +158,7 @@ services:
       PRE_SCRIPT: |
         #!/bin/sh
         set -e
+        if [ "$DEBUG_CONTAINERSSH" == "true" ]; then set -x; fi
         for i in `seq 60` ; do
           if nc -zvw1 configserver 8080 ; then
             echo configserver start
