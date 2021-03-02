@@ -158,22 +158,21 @@ services:
         set -e
         for i in `seq 60` ; do
           if nc -zvw1 configserver 8080 ; then
-            break
-          else
             echo configserver start
+            break
           fi
           sleep 1
         done
         for i in `seq 60` ; do
           if nc -zvw1 authserver 8081 ; then
-            break
-          else
             echo authserver start
+            break
           fi
           sleep 1
         done
         for i in `seq 60` ; do
           if [ -d /example/example/config.yml ] ; then
+            echo config file exist
             break
           fi
           sleep 1
