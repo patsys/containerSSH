@@ -64,8 +64,8 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
-        for i in `seq 10` ; do
-          if [ `find /example -name "*.crt" -type f | wc -w` -ge 3 ]; then
+        for i in `seq 180` ; do
+          if [ -f /example/server/server_cert.pem ]; then
             break
           fi
           sleep 1
@@ -104,14 +104,14 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
-        for i in `seq 10` ; do
+        for i in `seq 180` ; do
           if [ -f /conf/config.yml ]; then
             break
           fi
           sleep 1
         done
-        for i in `seq 10` ; do
-          if [ `find /example -name "*.crt" -type f | wc -w` -ge 3 ]; then
+        for i in `seq 180` ; do
+          if [ -f /example/server/server_cert.pem ]; then
             break
           fi
           sleep 1
