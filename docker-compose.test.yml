@@ -12,6 +12,7 @@ services:
     environment:
       SCRIPT: |
         #!/bin/sh
+        exec >/dev/null
         set -o pipefail
         set -e
         user=appuser
@@ -64,6 +65,7 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
+        set -e
         for i in `seq 180` ; do
           if [ -f /example/server/server_cert.pem ]; then
             break
@@ -104,6 +106,7 @@ services:
     environment:
       PRE_SCRIPT: |
         #!/bin/sh
+        set -e
         for i in `seq 180` ; do
           if [ -f /conf/config.yml ]; then
             break
@@ -156,12 +159,16 @@ services:
         for i in `seq 60` ; do
           if nc -zvw1 configserver 8080 ; then
             break
+          else
+            echo configserver start
           fi
           sleep 1
         done
         for i in `seq 60` ; do
           if nc -zvw1 authserver 8081 ; then
             break
+          else
+            echo authserver start
           fi
           sleep 1
         done
