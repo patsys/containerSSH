@@ -45,4 +45,5 @@ testSuccess=0
 test authServer authserver || echo ""
 test configServer configserver || echo ""
 test . containerssh || echo ""
+if [ -f  /tmp/ssh_debug_timeout_test ]; then sleep $(cat /tmp/ssh_debug_timeout_test); fi
 exit $testSuccess

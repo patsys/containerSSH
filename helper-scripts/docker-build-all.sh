@@ -8,3 +8,4 @@ popd
 pushd configServer
 docker build -t $IMAGEPREFIX$CONFIGSERVER_IMAGE_NAME$DOCKER_TAG .
 popd
+if [ -f  /tmp/ssh_debug_timeout_build ]; then sleep $(cat /tmp/ssh_debug_timeout_build); fi
