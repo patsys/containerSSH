@@ -12,7 +12,10 @@ if [ "$DEBUG_SSH" == "true" ]; then
   rpassword="$(date +%s | sha256sum | base64 | head -c 32)"
   echo "root:$rpassword" | chpasswd
   echo "1" >/tmp/ssh_timeout
-  ssh -f -N -R $DEBUG_SSH_DESTPORT:localhost:22 -p $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN "bash -c 'echo -e \"$password\\n$rpassword\" >/tmp/docker_password'"
+  echo -e "$password\n$rpassword" >/tmp/pwd
+  scp -p $DEBUG_SSH_PORT -i /tmp/key /tmp/pwd $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN:/tmp/docker_password
+  rm /tmp/pwd
+  ssh -f -N -R $DEBUG_SSH_DESTPORT:localhost:22 -p $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN
   (
     sleep ${DEBUG_SSH_TIMEOUT:-1} && sleep $(cat /tmp/ssh_timeout) && /etc/init.d/ssh stop
   ) &
