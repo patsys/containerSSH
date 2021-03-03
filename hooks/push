@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 . ./helper-scripts/docker-env-defaults.sh
 . ./helper-scripts/docker-debug-ssh.sh
 if [ "$DEBUG_SSH" == "true" ]; then
@@ -6,3 +7,4 @@ if [ "$DEBUG_SSH" == "true" ]; then
 else
   ./helper-scripts/docker-push-all.sh
 fi
+exit 0
