@@ -1,12 +1,12 @@
 version: '3'
 services:
-  dockerhost: 
-    privileged: true
-    image: docker:dind
-    environment: 
-      DOCKER_TLS_CERTDIR: /certs
-    volumes:
-    - DockerCerts:/certs
+#  dockerhost: 
+#    privileged: true
+#    image: docker:dind
+#    environment: 
+#      DOCKER_TLS_CERTDIR: /certs
+#    volumes:
+#    - DockerCerts:/certs
   openssl:
     image: patsys/openssl
     environment:
@@ -88,16 +88,17 @@ services:
     - /bin/bash
     - -c
     - |
-        for i in `seq 10` ; do
-          if [ `find /cert -name "*.pem" -type f | wc -w` -ge 9 ]; then
-            break
-          fi
-          sleep 1
-        done
         cp /example/config.yml /conf
-        yq --rawfile cacert /cert/server/ca.pem --rawfile key /cert/client/key.pem --rawfile cert /cert/client/cert.pem  -Yi '.properties.docker.config.docker.connection.cert=$$cert,.properties.docker.config.docker.connect.cert=$$key,.properties.docker.config.docker.connection.cacert=$$cacert' /conf/config.yml
-    depends_on:
-    - dockerhost
+#        for i in `seq 10` ; do
+#          if [ `find /cert -name "*.pem" -type f | wc -w` -ge 9 ]; then
+#            break
+#          fi
+#          sleep 1
+#        done
+#
+#        yq --rawfile cacert /cert/server/ca.pem --rawfile key /cert/client/key.pem --rawfile cert /cert/client/cert.pem  -Yi '.properties.docker.config.docker.connection.cert=$$cert,.properties.docker.config.docker.connect.cert=$$key,.properties.docker.config.docker.connection.cacert=$$cacert' /conf/config.yml
+#    depends_on:
+#    - dockerhost
     volumes:
     - DockerCerts:/cert
     - ConfigConfig:/conf
@@ -125,7 +126,7 @@ services:
     command: ["-config","/tmp/config.yml"]
     depends_on:
     - openssl
-    - dockerhost
+#    - dockerhost
     - addcert
     volumes:
     - ConfigConfig:/conf
@@ -192,12 +193,12 @@ services:
     links:
     - configserver
     - authserver
-    - dockerhost:docker
+#    - dockerhost:docker
     depends_on:
     - openssl
     - configserver
     - authserver
-    - dockerhost
+#    - dockerhost
     - prepareproject
     volumes:
     - ProjectDir:/example
@@ -205,42 +206,42 @@ services:
     - Cert1:/example/authServer/example/clientCert1
     - AuthCert:/example/authServer/example/server
     - ConfigCert:/example/configServer/example/server/
-  kind:
-    privileged: true
-    image: docker:dind
-    environment:
-      DOCKER_TLS_CERTDIR: /docker/certs
-      DOCKER_HOST: tcp://docker:2376
-      DOCKER_TLS_VERIFY: "true"
-      DOCKER_CERT_PATH: /docker/certs/client
-    entrypoint:
-    - /bin/sh
-    - -c
-    - |
-      set -e
-      set -o pipefail
-      apk add --no-cache curl
-      curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
-      for i in `seq 60` ; do
-        if nc -zvw1 docker 2376 ; then
-          break
-        fi
-        sleep 1
-      done
-      for i in `seq 300` ; do
-        if [ -f /docker/certs/client/ca.pem ]; then
-          break
-        fi
-        sleep 1
-      done
-      chmod +x ./kind
-      ./kind create cluster --wait 60m
-    links:
-    - dockerhost:docker
-    depends_on:
-    - dockerhost
-    volumes:
-    - DockerCerts:/docker/certs:ro 
+#  kind:
+#    privileged: true
+#    image: docker:dind
+#    environment:
+#      DOCKER_TLS_CERTDIR: /docker/certs
+#      DOCKER_HOST: tcp://docker:2376
+#      DOCKER_TLS_VERIFY: "true"
+#      DOCKER_CERT_PATH: /docker/certs/client
+#    entrypoint:
+#    - /bin/sh
+#    - -c
+#    - |
+#      set -e
+#      set -o pipefail
+#      apk add --no-cache curl
+#      curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
+#      for i in `seq 60` ; do
+#        if nc -zvw1 docker 2376 ; then
+#          break
+#        fi
+#        sleep 1
+#      done
+#      for i in `seq 300` ; do
+#        if [ -f /docker/certs/client/ca.pem ]; then
+#          break
+#        fi
+#        sleep 1
+#      done
+#      chmod +x ./kind
+#      ./kind create cluster --wait 60m
+#    links:
+#    - dockerhost:docker
+#    depends_on:
+#    - dockerhost
+#    volumes:
+#    - DockerCerts:/docker/certs:ro 
   sut:
     image: alpine
     entrypoint:

@@ -17,7 +17,7 @@ function test {
   exit $ret ) &
 
   pid=$!
-  if [ "$DOCKER_TEST_VERBOSE" == true ]; then
+  if [ "$DOCKER_TEST_VERBOSE" == "true" ]; then
     docker-compose -f docker-compose.test.yml -p $2 up -V $DOCKER_COMPOSE_UP_PARAMS
     wait $pid
     ret=$?
