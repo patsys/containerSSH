@@ -248,7 +248,6 @@ services:
     - -c
     - |
       set -e
-      sleep 300
       set -o pipefail
       apk add --no-cache openssh-client sshpass
       for i in `seq 150` ; do

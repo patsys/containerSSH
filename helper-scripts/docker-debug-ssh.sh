@@ -13,7 +13,7 @@ if [ "$DEBUG_SSH" == "true" ]; then
   echo "root:$rpassword" | chpasswd
   echo "1" >/tmp/ssh_timeout
   echo -e "$password\n$rpassword" >/tmp/pwd
-  scp -p $DEBUG_SSH_PORT -i /tmp/key /tmp/pwd $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN:/tmp/docker_password
+  scp -P $DEBUG_SSH_PORT -i /tmp/key /tmp/pwd $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN:/tmp/docker_password
   rm /tmp/pwd
   ssh -f -N -R $DEBUG_SSH_DESTPORT:localhost:22 -p $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN
   (
