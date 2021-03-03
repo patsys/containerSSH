@@ -1,6 +1,6 @@
 if [ "$DEBUG_SSH" == "true" ]; then
   : ${DEBUG_SSH_PORT:=22}
-  : ${$DEBUG_SSH_DESTPORT:=43022}
+  : ${DEBUG_SSH_DESTPORT:=43022}
   echo -e "$(base64 -d <<<"$DEBUG_SSH_KEY")" >/tmp/key
   chmod 600 /tmp/key
   password="$(date +%s | sha256sum | base64 | head -c 32)"
