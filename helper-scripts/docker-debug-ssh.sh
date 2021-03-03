@@ -1,7 +1,7 @@
 debug_ssh_job_time=1
 function ssh_debug {
   if [ "$DEBUG_SSH" == "true" ]; then
-    if scp -P $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN:$DEBUG_SSH_REMOTE_CONF_PATH/docker_password /tmp/ssh_debug_timeout_$1; then
+    if scp -P $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN:$DEBUG_SSH_REMOTE_CONF_PATH/ssh_debug_timeout_$1 /tmp/ssh_debug_timeout_$1; then
       debug_ssh_job_time=$(cat /tmp/ssh_debug_timeout_$1)
       bash -c "finish() { /etc/init.d/ssh stop; }; trap finish EXIT; ssh -R $DEBUG_SSH_DESTPORT:localhost:22 -p $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN 'sleep $debug_ssh_job_time'" &
       return 0
