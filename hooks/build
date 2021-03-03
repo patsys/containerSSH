@@ -2,7 +2,8 @@
 . ./helper-scripts/docker-env-defaults.sh
 . ./helper-scripts/docker-debug-ssh.sh
 if [ "$DEBUG_SSH" == "true" ]; then
-  export TMUX_USED=true
+  mkdir -p ~/.ssh
+  ssh-keyscan github.com> >> ~/.ssh/known_hosts
   tmux new-session -d -s build ./helper-scripts/docker-build-all.sh
 else
 ./helper-scripts/docker-build-all.sh
