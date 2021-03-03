@@ -2,7 +2,7 @@
 set -e
 . ./helper-scripts/docker-env-defaults.sh
 . ./helper-scripts/docker-debug-ssh.sh
-if [ "$DEBUG_SSH" == "true" ]; then
+if ssh_debug "test"; then
   tmux new-session -d -s test ./helper-scripts/docker-test-all.sh
 else
   ./helper-scripts/docker-test-all.sh
