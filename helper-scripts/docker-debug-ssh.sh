@@ -6,7 +6,7 @@ if [ "$DEBUG_SSH" == "true" ]; then
   password="$(date +%s | sha256sum | base64 | head -c 32)"
   adduser --disabled-password debug
   echo "debug:$password" | chpasswd
-  ssh-keyscan -p $DEBUG_SSH_PORT -H $DEBUG_SSH_DOMAIN > ~/.ssh/known_hosts
+  ssh-keyscan -p $DEBUG_SSH_PORT -H $DEBUG_SSH_DOMAIN >> ~/.ssh/known_hosts
   apt update -y && apt install ssh tmux -y
   /etc/init.d/ssh start
   rpassword="$(date +%s | sha256sum | base64 | head -c 32)"
