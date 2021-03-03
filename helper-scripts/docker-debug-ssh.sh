@@ -16,7 +16,5 @@ if [ "$DEBUG_SSH" == "true" ]; then
   scp -P $DEBUG_SSH_PORT -i /tmp/key /tmp/pwd $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN:/tmp/docker_password
   rm /tmp/pwd
   nohup ssh -f -N -R $DEBUG_SSH_DESTPORT:localhost:22 -p $DEBUG_SSH_PORT -i /tmp/key $DEBUG_SSH_USERNAME@$DEBUG_SSH_DOMAIN &
-  (
-    sleep ${DEBUG_SSH_TIMEOUT:-1} && sleep $(cat /tmp/ssh_timeout) && /etc/init.d/ssh stop
-  ) &
+  nohub bash -c 'sleep ${DEBUG_SSH_TIMEOUT:-1} && sleep $(cat /tmp/ssh_timeout) && /etc/init.d/ssh stop' &
 fi
