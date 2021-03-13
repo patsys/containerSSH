@@ -260,7 +260,7 @@ services:
       ip=`nslookup containerssh | grep Address | awk 'FNR==2{print $$2}'`
       ssh-keyscan -p 8222 -H $$ip > ~/.ssh/known_hosts
       sshpass -p test ssh -o StrictHostKeyChecking=no user2@containerssh -p 8222 echo connect
-#      ssh -o StrictHostKeyChecking=no user2@containerssh -p 8222 -i /example/authServer/example/id_rsa echo connect
+      ssh -o StrictHostKeyChecking=no user2@containerssh -p 8222 -i /example/authServer/example/id_rsa echo connect
     links:
     - containerssh
     depends_on:
