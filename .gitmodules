@@ -1,6 +1,9 @@
 [submodule "configServer/ContainerSSH"]
 	path = ContainerSSH
 	url = https://github.com/ContainerSSH/ContainerSSH.git
-[submodule "modules/http"]
-	path = modules/http
-	url = https://github.com/ContainerSSH/http.git
+[submodule "containerSSH-configServer"]
+	path = configServer
+	url = git@github.com:patsys/containerSSH-configServer
+[submodule "containerSSH-authServer"]
+	path = authServer
+	url = git@github.com:patsys/containerSSH-authServer

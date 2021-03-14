@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+. ./helper-scripts/docker-env-defaults.sh
+. ./helper-scripts/docker-debug-ssh.sh
+if ssh_debug "push"; then
+  tmux new-session -d -s push ./helper-scripts/docker-push-all.sh
+else
+  ./helper-scripts/docker-push-all.sh
+fi
+exit 0

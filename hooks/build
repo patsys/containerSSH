@@ -1,2 +1,12 @@
 #!/bin/bash
-./helper-scripts/docker-build-all.sh
+set -e
+. ./helper-scripts/docker-env-defaults.sh
+. ./helper-scripts/docker-debug-ssh.sh
+if ssh_debug "build"; then
+  mkdir -p ~/.ssh
+  ssh-keyscan github.com >> ~/.ssh/known_hosts
+  tmux new-session -d -s build ./helper-scripts/docker-build-all.sh
+else
+  ./helper-scripts/docker-build-all.sh
+fi
+exit 0
